@@ -1,32 +1,38 @@
-version: '3.8'
-
+version: '3'
 services:
   postgres:
-    image: postgres:13
-    container_name: crypto_postgres
+    image: postgres
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin123
-      POSTGRES_DB: crypto_db
+      POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"
-    volumes:
-      - pg_data:/var/lib/postgresql/data
 
   zookeeper:
-    image: wurstmeister/zookeeper
+    image: wurstmeister/zookeeper:3.4.6
     ports:
       - "2181:2181"
 
   kafka:
-    image: wurstmeister/kafka
+    image: wurstmeister/kafka:latest
     ports:
       - "9092:9092"
     environment:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - zookeeper
 
-volumes:
-  pg_data:
+  crypto-data-ingestion-app:
+    image: your-crypto-data-app-image
+    build:
+      context: ./crypto-data-ingestion
+    depends_on:
+      - kafka
+
+  notification-service:
+    image: your-notification-app-image
+    build:
+      context: ./notification-service
+    depends_on:
+      - kafka
